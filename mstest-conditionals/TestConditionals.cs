@@ -13,10 +13,14 @@ namespace mstest_conditionals
             {
                 switch (state)
                 {
-                    case StartupState.InitializingComponents: localEqualityCompare("Initializing Components"); break;
-                    case StartupState.LoadingConfiguration: localEqualityCompare("Loading Configurations"); break;
-                    case StartupState.CheckingForUpdates: localEqualityCompare("Checking For Updates"); break;
-                    case StartupState.ContactingServer: localEqualityCompare("Contacting Server"); break;
+                    case StartupState.InitializingComponents: 
+                        localEqualityCompare("Initializing Components"); break;
+                    case StartupState.LoadingConfiguration:
+                        localEqualityCompare("Loading Configuration"); break;
+                    case StartupState.CheckingForUpdates: 
+                        localEqualityCompare("Checking For Updates"); break;
+                    case StartupState.ContactingServer:
+                        localEqualityCompare("Contacting Server"); break;
                     case StartupState.FinalizingSetup: localEqualityCompare("Finalizing Setup"); break;
                     default: Assert.Fail($"Unexpected state: {state}"); break;
                 }
@@ -26,6 +30,9 @@ namespace mstest_conditionals
                         expected: expected,
                         actual: $"{state}".CamelCaseToSpaces(),
                         message: "Expecting a single space where pattern is lower case character to upper case character.");
+#if VERBOSE
+                    Console.WriteLine($"{state}->{state.ToString().CamelCaseToSpaces()}");
+#endif
                 }
             }
         }
