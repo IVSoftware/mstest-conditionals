@@ -1,4 +1,8 @@
-Your comment states:
+My understanding is that the goal is to ignore certain tests based on missing system prerequisites. In similar situations, what has worked for me is the approach shown in the code example below. Feel free to run this sample from my GitHub repo to see if it provides the behavior you're looking for. [Clone](https://github.com/IVSoftware/mstest-conditionals.git)
+
+___
+
+As far as what the issue might be, without seeing more code, your comment states:
 
 > "System prerequisites not met" is discovered at runtime.
 
@@ -6,7 +10,7 @@ But you also make reference to the `[Ignore]` attribute and also mention `#if`:
 
 > I could try comment or #ifdeffing the TestMethod attribute to sidestep the issue, rather than adding the Ignored attribute. 
 
-Both alternatives — using `#if` or commenting out the attribute — are at odds with the runtime discovery of system prerequisites. Attributes like `[Ignore]` are evaluated at compile time and can't be dynamically altered once the code is running. Conditional compilation (`#if`) is also a compile-time feature. This, too, is inherently static and does not allow for changes during runtime. For example, the image below shows the immediate effect of unchecking a custom conditional compile symbol from the project's properties window.
+Both alternatives — using `#if` or applying the `Ignore` attribute — are at odds with the runtime discovery of system prerequisites. Attributes like `[Ignore]` are evaluated at compile time and can't be dynamically altered once the code is running. Conditional compilation (`#if`) is also a compile-time feature. This, too, is inherently static and does not allow for changes during runtime. For example, the image below shows the immediate effect of unchecking a custom conditional compile symbol from the project's properties window.
 
 [![disabled by preprocessor directive][1]][1]
 
