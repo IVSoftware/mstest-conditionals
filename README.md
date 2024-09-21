@@ -33,7 +33,7 @@ public void TestInitialize()
         // In RUN mode, will show as a skipped test.
         // In DEBUG mode:
         // - WILL: Break on Thrown
-        // - UNLESS: AssertInconclusiveExecption is disabled in Exception Settings window.
+        // - UNLESS: AssertInconclusiveException is disabled in Exception Settings window.
         Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
     }
 }
@@ -143,6 +143,8 @@ public static async Task ClassInit(TestContext context)
     #endregion L o c a l M e t h o d s
 }
 ```
+
+
 
   [1]: https://i.sstatic.net/AJMdlfj8.png
   [2]: https://i.sstatic.net/82L6StfT.png

@@ -81,7 +81,7 @@ namespace mstest_conditionals
                 // In RUN mode, will show as a skipped test.
                 // In DEBUG mode:
                 // - WILL: Break on Thrown
-                // - UNLESS: AssertInconclusiveExecption is disabled in Exception Settings window.
+                // - UNLESS: AssertInconclusiveException is disabled in Exception Settings window.
                 Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
             }
         }
