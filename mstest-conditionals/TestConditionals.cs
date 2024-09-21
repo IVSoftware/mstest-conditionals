@@ -9,16 +9,17 @@ namespace mstest_conditionals
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int MessageBox(IntPtr hWnd, String text, String caption, long type);
-        private const string ReachableServer = "http://ivsoftware.net";
-        private const string UnreachableServer = "http://unreachable.bad";
+        private const string Server1 = "http://ivsoftware.net";     // Reachable
+        private const string Server2 = "http://unreachable.bad";    // Unreachable
         private static MethodInfo[] _skippedTestMethods = new MethodInfo[0];
         private static readonly HttpClient httpClient = new HttpClient();
+        private static Thread? messageBoxThread = null;
         [ClassInitialize]
         public static async Task ClassInit(TestContext context)
         {
             List<string> _reachableServers = new List<string>();
             List<string> _unreachableServers = new List<string>();
-            foreach (var url in new[] { ReachableServer, UnreachableServer })
+            foreach (var url in new[] { Server1, Server2 })
             {
                 if (await localIsServerReachableAsync(url))
                 {
@@ -31,8 +32,8 @@ namespace mstest_conditionals
             }
             if (_unreachableServers.Any())
             {
-                // List reflect attribute to find test methods that rely on
-                // requirement, then pop up an async message box listing them
+                // Use reflection to find test methods with a RuntimeRequirement attribute that
+                // don't meet the requirement, then display them in a non-blocking message box.
                 _skippedTestMethods =
                     typeof(TestConditionals)
                     .GetMethods(BindingFlags.Instance | BindingFlags.Public)
@@ -41,14 +42,15 @@ namespace mstest_conditionals
                         _unreachableServers.Contains(attr.Requirement))
                     .ToArray();
 
-                // List skipped tests in a popup, but don't actually halt the execution
-                var staThread = new Thread(() =>
+                // List skipped tests in a popup, but don't actually halt the execution.
+                // We'll await the MB in the [ClassCleanup]
+                messageBoxThread = new Thread(() =>
                     MessageBox(
                     IntPtr.Zero,
                     string.Join(Environment.NewLine, _skippedTestMethods.Select(_ => _.Name)),
                     "Skipped Tests", 0));
-                staThread.SetApartmentState(ApartmentState.STA);
-                staThread.Start();
+                messageBoxThread.SetApartmentState(ApartmentState.STA);
+                messageBoxThread.Start();
             }
 
             #region L o c a l M e t h o d s
@@ -73,53 +75,28 @@ namespace mstest_conditionals
         [TestInitialize]
         public void TestInitialize()
         {
-#if ASSERT_IN_TEST_INITIALIZE
             if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
             {
                 // Test won't run at all.
                 // In RUN mode, will show as a skipped test.
-                // In DEBUG mode will: BREAK ON THROWN. So, if you don't want this, use RUN mode!
+                // In DEBUG mode:
+                // - WILL: Break on Thrown
+                // - UNLESS: AssertInconclusiveExecption is disabled in Exception Settings window.
                 Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
             }
-#endif
         }
 
-        [TestMethod, RuntimeRequirement(ReachableServer)]
-        public async Task TestSomethingA()
+        [TestMethod, RuntimeRequirement(Server1)]
+        public void TestSomethingA()
         {
-#if !ASSERT_IN_TEST_INITIALIZE
-            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
-            {
-                goto skip; // Short circuit the test.
-            }
-#endif
-            skip:;
         }
-        [TestMethod, RuntimeRequirement(UnreachableServer)]
-        public async Task TestSomethingB()
+        [TestMethod, RuntimeRequirement(Server2)]
+        public void TestSomethingB()
         {
-#if !ASSERT_IN_TEST_INITIALIZE
-            // This option allows skipping the body, but the
-            // test will show as PASS (because it did not FAIL).
-            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
-            {
-                goto skip; // Short circuit the test.
-            }
-#endif
-            skip:;
         }
         [TestMethod]
-        public async Task TestSomethingC()
+        public void TestSomethingC()
         {
-#if !ASSERT_IN_TEST_INITIALIZE
-            // This option allows skipping the body, but the
-            // test will show as PASS (because it did not FAIL).
-            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
-            {
-                goto skip; // Short circuit the test.
-            }
-#endif
-            skip:;
         }
 #if INCLUDE_EXTENSIONS
         [TestMethod("Extension.CamelCaseToSpaces")]
@@ -153,6 +130,17 @@ namespace mstest_conditionals
             }
         }
 #endif
+
+        [ClassCleanup]
+        public void ClassCleanup()
+        {
+            if (messageBoxThread != null && messageBoxThread.IsAlive)
+            {
+                // Wait for the message box thread to complete
+                messageBoxThread.Join();
+            }
+        }
+
     }
 
     class RuntimeRequirementAttribute : Attribute
