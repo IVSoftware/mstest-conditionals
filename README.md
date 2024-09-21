@@ -2,7 +2,7 @@ Your comment states:
 
 > "System prerequisites not met" is discovered at runtime.
 
-But you also make reference to the `[Ignore]` attribute and also mention `#if`.
+But you also make reference to the `[Ignore]` attribute and also mention `#if`:
 
 > I could try comment or #ifdeffing the TestMethod attribute to sidestep the issue, rather than adding the Ignored attribute. 
 
