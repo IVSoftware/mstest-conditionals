@@ -22,6 +22,23 @@ In contrast, to accommodate the scenario where _**"System prerequisites not met"
 
 [![test skipped by assert in test initialized][2]][2]
 
+```
+public TestContext? TestContext { get; set; }
+[TestInitialize]
+public void TestInitialize()
+{
+    if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
+    {
+        // Test won't run at all.
+        // In RUN mode, will show as a skipped test.
+        // In DEBUG mode:
+        // - WILL: Break on Thrown
+        // - UNLESS: AssertInconclusiveExecption is disabled in Exception Settings window.
+        Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
+    }
+}
+```
+
 ##### Example:
 
 Suppose we decorate three tests with a custom attribute named `[RuntimeRequirement]`
@@ -56,7 +73,7 @@ class RuntimeRequirementAttribute : Attribute
 
 ___
 
-##### STEP 1: In [ClassInitialize] check the condition.
+##### SETUP: In [ClassInitialize] check the condition.
 
 In this example, the server reachability (OR system capability OR whatever...) is tested. A non-blocking `MessageBox` is displayed, listing the tests that will be skipped but allowing the test execution to continue without operator input.
 
@@ -126,29 +143,6 @@ public static async Task ClassInit(TestContext context)
     #endregion L o c a l M e t h o d s
 }
 ```
-
-##### STEP 2: Test the System State in the `[TestInitialize]` Block
-
-Check the `Requirement` property against a meaningful condition (e.g., server reachability or system capability). If the requirement isn't met, the `Assert.Inconclusive()` statement will mark the test as skipped, allowing the next test in the suite to proceed without interruption.
-
-
-```
-public TestContext? TestContext { get; set; }
-[TestInitialize]
-public void TestInitialize()
-{
-    if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
-    {
-        // Test won't run at all.
-        // In RUN mode, will show as a skipped test.
-        // In DEBUG mode:
-        // - WILL: Break on Thrown
-        // - UNLESS: AssertInconclusiveExecption is disabled in Exception Settings window.
-        Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
-    }
-}
-```
-
 
   [1]: https://i.sstatic.net/AJMdlfj8.png
   [2]: https://i.sstatic.net/82L6StfT.png
