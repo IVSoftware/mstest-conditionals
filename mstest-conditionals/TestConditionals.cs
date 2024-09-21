@@ -132,7 +132,7 @@ namespace mstest_conditionals
 #endif
 
         [ClassCleanup]
-        public void ClassCleanup()
+        public static void ClassCleanup()
         {
             if (messageBoxThread != null && messageBoxThread.IsAlive)
             {
@@ -140,7 +140,6 @@ namespace mstest_conditionals
                 messageBoxThread.Join();
             }
         }
-
     }
 
     class RuntimeRequirementAttribute : Attribute
