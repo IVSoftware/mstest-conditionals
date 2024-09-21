@@ -10,7 +10,7 @@ But you also make reference to the `[Ignore]` attribute and also mention `#if`:
 
 > I could try comment or #ifdeffing the TestMethod attribute to sidestep the issue, rather than adding the Ignored attribute. 
 
-Both alternatives — using `#if` or applying the `Ignore` attribute — are at odds with the runtime discovery of system prerequisites. Attributes like `[Ignore]` are evaluated at compile time and can't be dynamically altered once the code is running. Conditional compilation (`#if`) is also a compile-time feature. This, too, is inherently static and does not allow for changes during runtime. For example, the image below shows the immediate effect of unchecking a custom conditional compile symbol from the project's properties window.
+Both alternatives — using `#if` or applying the `Ignore` attribute — are at odds with the runtime discovery of system prerequisites. Attributes like `[Ignore]` are evaluated at compile time and can't be dynamically altered once the code is running. Conditional compilation (`#if`) is also a compile-time feature. This, too, is inherently static and does not allow for changes during runtime. In terms of using `#if` effectively, the image below shows the immediate effect of unchecking a custom conditional compile symbol from the project's properties window.
 
 [![disabled by preprocessor directive][1]][1]
 
@@ -136,7 +136,6 @@ Check the `Requirement` property against a meaningful condition (e.g., server re
 public TestContext? TestContext { get; set; }
 [TestInitialize]
 public void TestInitialize()
-{public void TestInitialize()
 {
     if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
     {
