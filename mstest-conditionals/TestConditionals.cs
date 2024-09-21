@@ -1,6 +1,3 @@
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -10,10 +7,8 @@ namespace mstest_conditionals
     [TestClass]
     public class TestConditionals
     {
-
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int MessageBox(IntPtr hWnd, String text, String caption, long type);
-
         private const string ReachableServer = "http://ivsoftware.net";
         private const string UnreachableServer = "http://unreachable.bad";
         private static MethodInfo[] _skippedTestMethods = new MethodInfo[0];
@@ -45,10 +40,15 @@ namespace mstest_conditionals
                         _.GetCustomAttribute<RuntimeRequirementAttribute>() is RuntimeRequirementAttribute attr &&
                         _unreachableServers.Contains(attr.Requirement))
                     .ToArray();
-                // List skipped tests
-                MessageBox(
-                    IntPtr.Zero, 
-                    string.Join(Environment.NewLine, _skippedTestMethods.Select(_=>_.Name)), "Skipped Tests", 0);
+
+                // List skipped tests in a popup, but don't actually halt the execution
+                var staThread = new Thread(() =>
+                    MessageBox(
+                    IntPtr.Zero,
+                    string.Join(Environment.NewLine, _skippedTestMethods.Select(_ => _.Name)),
+                    "Skipped Tests", 0));
+                staThread.SetApartmentState(ApartmentState.STA);
+                staThread.Start();
             }
 
             #region L o c a l M e t h o d s
@@ -71,29 +71,55 @@ namespace mstest_conditionals
         }
         public TestContext? TestContext { get; set; }
         [TestInitialize]
-        public void TestInit()
-        { 
+        public void TestInitialize()
+        {
+#if ASSERT_IN_TEST_INITIALIZE
             if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
             {
+                // Test won't run at all.
+                // In RUN mode, will show as a skipped test.
+                // In DEBUG mode will: BREAK ON THROWN. So, if you don't want this, use RUN mode!
                 Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
             }
+#endif
         }
 
         [TestMethod, RuntimeRequirement(ReachableServer)]
         public async Task TestSomethingA()
         {
+#if !ASSERT_IN_TEST_INITIALIZE
             if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
             {
-                return; // Short circuit the test.
+                goto skip; // Short circuit the test.
             }
+#endif
+            skip:;
         }
         [TestMethod, RuntimeRequirement(UnreachableServer)]
         public async Task TestSomethingB()
         {
+#if !ASSERT_IN_TEST_INITIALIZE
+            // This option allows skipping the body, but the
+            // test will show as PASS (because it did not FAIL).
             if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
             {
-                return; // Short circuit the test.
+                goto skip; // Short circuit the test.
             }
+#endif
+            skip:;
+        }
+        [TestMethod]
+        public async Task TestSomethingC()
+        {
+#if !ASSERT_IN_TEST_INITIALIZE
+            // This option allows skipping the body, but the
+            // test will show as PASS (because it did not FAIL).
+            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
+            {
+                goto skip; // Short circuit the test.
+            }
+#endif
+            skip:;
         }
 #if INCLUDE_EXTENSIONS
         [TestMethod("Extension.CamelCaseToSpaces")]
@@ -140,7 +166,6 @@ namespace mstest_conditionals
 
     static partial class Extensions
     {
-
         public static string CamelCaseToSpaces(this string @string)
         {
             string pattern = "(?<![A-Z])([A-Z][a-z]|(?<=[a-z])[A-Z])";

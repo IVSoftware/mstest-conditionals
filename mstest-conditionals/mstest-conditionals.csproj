@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);VERBOSE;ASSERT_IN_TEST_INIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);VERBOSE;ASSERT_IN_TEST_INIT;ASSERT_IN_TEST_INITIALIZE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
