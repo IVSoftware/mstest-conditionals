@@ -16,13 +16,13 @@ namespace mstest_conditionals
 
         private const string ReachableServer = "http://ivsoftware.net";
         private const string UnreachableServer = "http://unreachable.bad";
-        static List<string> _reachableServers = new List<string>();
-        static List<string> _unreachableServers = new List<string>();
+        private static MethodInfo[] _skippedTestMethods = new MethodInfo[0];
         private static readonly HttpClient httpClient = new HttpClient();
-
         [ClassInitialize]
         public static async Task ClassInit(TestContext context)
         {
+            List<string> _reachableServers = new List<string>();
+            List<string> _unreachableServers = new List<string>();
             foreach (var url in new[] { ReachableServer, UnreachableServer })
             {
                 if (await localIsServerReachableAsync(url))
@@ -38,16 +38,17 @@ namespace mstest_conditionals
             {
                 // List reflect attribute to find test methods that rely on
                 // requirement, then pop up an async message box listing them
-                var skippedTestMethods =
+                _skippedTestMethods =
                     typeof(TestConditionals)
                     .GetMethods(BindingFlags.Instance | BindingFlags.Public)
                     .Where(_ =>
                         _.GetCustomAttribute<RuntimeRequirementAttribute>() is RuntimeRequirementAttribute attr &&
                         _unreachableServers.Contains(attr.Requirement))
                     .ToArray();
+                // List skipped tests
                 MessageBox(
                     IntPtr.Zero, 
-                    string.Join(Environment.NewLine, skippedTestMethods.Select(_=>_.Name)), "Skipped Tests", 0);
+                    string.Join(Environment.NewLine, _skippedTestMethods.Select(_=>_.Name)), "Skipped Tests", 0);
             }
 
             #region L o c a l M e t h o d s
@@ -55,7 +56,6 @@ namespace mstest_conditionals
             {
                 try
                 {
-                    // Make a HEAD request using HttpClient
                     using (var request = new HttpRequestMessage(HttpMethod.Head, url))
                     using (var response = await httpClient.SendAsync(request))
                     {
@@ -69,16 +69,31 @@ namespace mstest_conditionals
             }
             #endregion L o c a l M e t h o d s
         }
+        public TestContext? TestContext { get; set; }
+        [TestInitialize]
+        public void TestInit()
+        { 
+            if(_skippedTestMethods.Select(_=>_.Name).Contains(TestContext?.TestName))
+            {
+                Assert.Inconclusive($"Requirement not met for {TestContext?.TestName}");
+            }
+        }
+
         [TestMethod, RuntimeRequirement(ReachableServer)]
         public async Task TestSomethingA()
         {
-            // For now, exercise class initialize by await forever here
-            await new SemaphoreSlim(0, 1).WaitAsync();
+            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
+            {
+                return; // Short circuit the test.
+            }
         }
         [TestMethod, RuntimeRequirement(UnreachableServer)]
         public async Task TestSomethingB()
         {
-
+            if (_skippedTestMethods.Select(_ => _.Name).Contains(TestContext?.TestName))
+            {
+                return; // Short circuit the test.
+            }
         }
 #if INCLUDE_EXTENSIONS
         [TestMethod("Extension.CamelCaseToSpaces")]
